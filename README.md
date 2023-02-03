@@ -8,3 +8,10 @@
   -  for every deployment that needs action taken, post /scale with delta and deploymentid
 - exit cleanly on a SIGINT
 - long-running daemon
+
+### TODO:
+- Refactor everything
+- Add documentation via comments
+- Write Tests
+- Refactor json un/marshal stuff into serverapi
+- 

@@ -23,6 +23,7 @@ func main() {
 	activeDeployments := make(chan []deployments.Config, 1)
 	scalableDeployments := make(chan deployments.Config)
 
+	// Gets a list of all the currently active deployments
 	go func() {
 		for {
 			discoveredDeployments := deployments.Discover()
@@ -32,6 +33,7 @@ func main() {
 		}
 	}()
 
+	// Listens for active deploys and iterates through them every 30 seconds to determine if scaling is required
 	go func() {
 		for {
 			activeDeploys := <-activeDeployments
@@ -44,6 +46,7 @@ func main() {
 		}
 	}()
 
+	// Listens for scalable deployments and scales them as they're available
 	go func() {
 		for {
 			deployment := <-scalableDeployments

@@ -5,15 +5,13 @@ import (
 	"fmt"
 )
 
-type discoveredDeployments struct {
-	Configs []Config `json:"deployments"`
-}
-
 func Discover() []Config {
 	fmt.Println("Discovering Deployments")
-	//get /discover
 	body := DiscoverDeployments()
 
+	type discoveredDeployments struct {
+		Configs []Config `json:"deployments"`
+	}
 	var discoveredDeploys discoveredDeployments
 	err := json.Unmarshal(body, &discoveredDeploys)
 	if err != nil {
@@ -45,7 +43,6 @@ func status(id string) Status {
 }
 
 func Scale(config Config) {
-	//post /scale with delta and deployment_id
 	ScaleDeployment(5, config.Id)
 	fmt.Printf("Scaling: %v\n", config)
 }
