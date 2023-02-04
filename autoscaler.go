@@ -18,7 +18,7 @@ const (
 // Main operates as the entry point to the program.
 func main() {
 	// Set up logging.
-	file, err := os.OpenFile("autoscalerLog.txt", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
+	file, err := os.OpenFile("autoscaler.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
 	if err != nil {
 		log.Fatal(err)
 	}

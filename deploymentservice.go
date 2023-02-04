@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"log"
+	"math"
 )
 
 // A DeploymentConfig contains the data for a deployment's configuration.
@@ -37,11 +38,30 @@ func CheckStatusAndScale(config DeploymentConfig) {
 		return
 	}
 
-	if float32(status.FreeServers)/float32(status.TotalServers) != config.TargetFreePct {
-		delta := 3
+	delta := 0
+	delta = calculateDelta(config, status)
+
+	if delta != 0 {
 		err = ScaleDeployment(config.Id, delta)
 		if err != nil {
 			log.Printf("CheckStatusAndScale: scaling of deployment { %v } failed, skipping deployment : %v", config, err)
 		}
 	}
+}
+
+func calculateDelta(config DeploymentConfig, status Status) int {
+	delta := 0
+	targetFreePct := float64(config.TargetFreePct) / 100.0
+	freePercent := float64(status.FreeServers) / float64(status.TotalServers)
+	if freePercent < targetFreePct || freePercent-targetFreePct > 0.01 {
+		targetBusyPct := 1.0 - targetFreePct
+		busyServerCount := status.TotalServers - status.FreeServers
+		targetServerCount := int(math.Ceil(float64(busyServerCount) / targetBusyPct))
+		targetFreeServerCount := int(math.Ceil(float64(targetServerCount) * targetFreePct))
+		diff := targetFreeServerCount - status.FreeServers
+
+		delta = int(math.Ceil(float64(diff) / float64(config.ServersPerHost)))
+	}
+
+	return delta
 }

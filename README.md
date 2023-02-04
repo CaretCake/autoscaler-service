@@ -23,6 +23,10 @@ The ```deploymentservice.go``` file contains code handling the calls to ```api.g
 
 ```helpers.go``` contains some helpful wrapper functions that were the result of refactoring some repetitive error handling in ```api.go```.
 
+Currently, the autoscaler is set up to log errors in ```autoscaler.log``` with a basic setup of the built-in log package and continue on.
+
+In addition to tests in the repo, I also created a mock server with Postman to test against.
+
 ### TODO:
 - Write Tests
 - Ensure proper error handling for api calls
