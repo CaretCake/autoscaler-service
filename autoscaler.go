@@ -1,59 +1,94 @@
 package main
 
 import (
-	"autoscaler/deployments"
-	"fmt"
+	"log"
 	"os"
 	"os/signal"
+	"sync"
 	"syscall"
 	"time"
 )
 
+// The number of seconds to wait between each check.
+const (
+	secondsBetweenDiscovery     = 60
+	secondsBetweenCheckAndScale = 30
+)
+
+// Main operates as the entry point to the program.
 func main() {
-	sigs := make(chan os.Signal, 1)
-	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
-	done := make(chan bool, 1)
-	go func() {
-		signal := <-sigs
-		fmt.Println(signal)
-		// wait group or whatever with the others to ensure that we let them empty their channels?
-		done <- true
-	}()
+	// Set up logging.
+	file, err := os.OpenFile("autoscalerLog.txt", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
+	if err != nil {
+		log.Fatal(err)
+	}
+	log.SetOutput(file)
+	log.SetFlags(log.Ldate | log.Ltime | log.LUTC)
 
-	activeDeployments := make(chan []deployments.Config, 1)
-	scalableDeployments := make(chan deployments.Config)
+	// Set up graceful exit.
+	quitSignalChannel := make(chan os.Signal, 1)
+	signal.Notify(quitSignalChannel, syscall.SIGINT, syscall.SIGTERM)
+	shutdownChannel := make(chan bool)
+	waitGroup := &sync.WaitGroup{}
+	waitGroup.Add(1)
 
-	// Gets a list of all the currently active deployments
-	go func() {
-		for {
-			discoveredDeployments := deployments.Discover()
-			activeDeployments <- discoveredDeployments
-			activeDeployments <- discoveredDeployments
-			time.Sleep(time.Minute)
-		}
-	}()
+	autoscale(shutdownChannel, waitGroup)
 
-	// Listens for active deploys and iterates through them every 30 seconds to determine if scaling is required
-	go func() {
-		for {
-			activeDeploys := <-activeDeployments
-			for _, deployment := range activeDeploys {
-				if deployments.NeedsScaling(deployment) {
-					scalableDeployments <- deployment
-				}
+	// Wait for, and then handle graceful exit.
+	<-quitSignalChannel
+	log.Println("Received quit. Sending shutdown then waiting on goroutines...")
+	shutdownChannel <- true
+	waitGroup.Wait()
+	log.Println("Exiting.")
+}
+
+// Autoscale runs the goroutines that discover deployments and check status/scale each deployment.
+func autoscale(shutdownChannel chan bool, waitGroup *sync.WaitGroup) {
+	activeDeployments := make(chan []DeploymentConfig)
+
+	go func(shutdownChannel chan bool, waitGroup *sync.WaitGroup) {
+		defer waitGroup.Done()
+		defer close(activeDeployments)
+
+		ticker := time.NewTicker(secondsBetweenDiscovery * time.Second)
+		defer ticker.Stop()
+
+		for ; true; <-ticker.C {
+			select {
+			case <-shutdownChannel:
+				return
+			default:
 			}
-			time.Sleep(time.Second * 30)
-		}
-	}()
 
-	// Listens for scalable deployments and scales them as they're available
-	go func() {
+			discoveredDeployments, err := Discover()
+			if err != nil {
+				log.Printf("Autoscale: error getting deployments, skipping: %v", err)
+				continue
+			}
+			//log.Println("Discovered deploymentss: ", time.Now())
+
+			activeDeployments <- discoveredDeployments
+			timer := time.After(secondsBetweenCheckAndScale * time.Second)
+			<-timer
+			activeDeployments <- discoveredDeployments // Sends to the activeDeployments channel twice as the status check and scaling occurs every 30 sec
+		}
+	}(shutdownChannel, waitGroup)
+
+	go func(shutdownChannel chan bool, waitGroup *sync.WaitGroup) {
+		defer waitGroup.Done()
+
 		for {
-			deployment := <-scalableDeployments
-			deployments.Scale(deployment)
-		}
-	}()
+			select {
+			case <-shutdownChannel:
+				return
+			default:
+			}
 
-	<-done
-	fmt.Println("Exiting")
+			activeDeploys := <-activeDeployments
+			//log.Println("StatusCheck received deployments: ", activeDeploys, " : ", time.Now())
+			for _, deployment := range activeDeploys {
+				go CheckStatusAndScale(deployment)
+			}
+		}
+	}(shutdownChannel, waitGroup)
 }

@@ -1,17 +1,13 @@
 # autoscaler-service
+This is a basic autoscaler service written in Golang.
 
+### How to Build It
+```go run .```
 
+### Coding Decisions
 
-### Requirements
-- every 1 minute, get /discover to get json object containing deployments[]
-- every 30 seconds, get /status/{id} for each deployment.
-  -  for every deployment that needs action taken, post /scale with delta and deploymentid
-- exit cleanly on a SIGINT
-- long-running daemon
 
 ### TODO:
-- Refactor everything
-- Add documentation via comments
 - Write Tests
-- Refactor json un/marshal stuff into serverapi
-- 
+- Ensure proper error handling for api calls
+  - optional error field
