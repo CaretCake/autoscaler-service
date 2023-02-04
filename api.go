@@ -4,7 +4,7 @@ import (
 	"fmt"
 )
 
-const apiURL = "https://8742bce6-176e-43f2-ba49-46349aea041a.mock.pstmn.io"
+const apiURL = "127.0.0.1:8000"
 
 // GetDeployments makes a GET request to return a list of DeploymentConfigs representing all active deployments.
 func GetDeployments() ([]DeploymentConfig, error) {

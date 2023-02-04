@@ -17,7 +17,7 @@ The second goroutine in ```autoscale()``` will receive from the activeDeployment
 
 In ```autoscaler.go```, I opted to pull the autoscaler logic itself out of main and into its own function for clarity when reading the code.
 
-The ```deploymentservice.go``` file contains code handling the calls to ```api.go``` as well as the logic behind the scaling calculation.
+The ```deploymentservice.go``` file contains code handling the calls to ```api.go``` as well as the logic behind the scaling delta calculation. This code does assume that we want to check every case where the targetFreePct doesn't match the deployment's current free percentage of servers, even if the free percentage is only an extremely tiny percentage above the target and unlikely to benefit from scaling. A way to configure a limit would be easy to implement, however.
 
 ```api.go``` contains all of the calls out to the deployment api and handles reading, deserialization/serialization, and errors from the api.
 

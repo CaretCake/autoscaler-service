@@ -54,19 +54,17 @@ func CheckStatusAndScale(config DeploymentConfig) {
 func calculateDelta(config DeploymentConfig, status Status) int {
 	delta := 0
 	targetFreePct := float64(config.TargetFreePct) / 100.0
+	targetFreePct = math.Round(targetFreePct*100) / 100
 	freePercent := float64(status.FreeServers) / float64(status.TotalServers)
 
-	if freePercent > targetFreePct && freePercent-targetFreePct < 1e-9 {
-		log.Println("whoa: ", config.Id)
-	}
-
-	if freePercent < targetFreePct || freePercent-targetFreePct > 1e-9 {
+	if freePercent != targetFreePct {
 		targetBusyPct := 1.0 - targetFreePct
+		targetBusyPct = math.Round(targetBusyPct*100) / 100
 		busyServerCount := status.TotalServers - status.FreeServers
 
 		// The following uses the inferred target busy percentage and current number of busy servers
 		// to calculate the new targetServerCount. i.e. busyServerCount is targetBusyPct of the targetServerCount
-		targetServerCount := int(math.Ceil(float64(busyServerCount) / targetBusyPct))
+		targetServerCount := int(float64(busyServerCount) / targetBusyPct)
 		targetFreeServerCount := int(math.Ceil(float64(targetServerCount) * targetFreePct))
 		diff := targetFreeServerCount - status.FreeServers
 
