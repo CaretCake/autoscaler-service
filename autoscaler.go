@@ -46,6 +46,7 @@ func main() {
 func autoscale(shutdownChannel chan bool, waitGroup *sync.WaitGroup) {
 	activeDeployments := make(chan []DeploymentConfig)
 
+	// goroutine handles the discover deployments interval
 	go func(shutdownChannel chan bool, waitGroup *sync.WaitGroup) {
 		defer waitGroup.Done()
 		defer close(activeDeployments)
@@ -65,7 +66,6 @@ func autoscale(shutdownChannel chan bool, waitGroup *sync.WaitGroup) {
 				log.Printf("Autoscale: error getting deployments, skipping: %v", err)
 				continue
 			}
-			//log.Println("Discovered deploymentss: ", time.Now())
 
 			activeDeployments <- discoveredDeployments
 			timer := time.After(secondsBetweenCheckAndScale * time.Second)
@@ -74,6 +74,7 @@ func autoscale(shutdownChannel chan bool, waitGroup *sync.WaitGroup) {
 		}
 	}(shutdownChannel, waitGroup)
 
+	// goroutine handles the deployment status and scale interval
 	go func(shutdownChannel chan bool, waitGroup *sync.WaitGroup) {
 		defer waitGroup.Done()
 
@@ -85,7 +86,6 @@ func autoscale(shutdownChannel chan bool, waitGroup *sync.WaitGroup) {
 			}
 
 			activeDeploys := <-activeDeployments
-			//log.Println("StatusCheck received deployments: ", activeDeploys, " : ", time.Now())
 			for _, deployment := range activeDeploys {
 				go CheckStatusAndScale(deployment)
 			}
