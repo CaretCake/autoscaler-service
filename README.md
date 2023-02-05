@@ -13,10 +13,10 @@ go test . -v
 go run .
 ```
 
-#### To build and install (to the Go install path):
+#### To build and run:
 ```
 go build
-go install
+./autoscaler.exe&
 ```
 
 ## Coding Decisions
@@ -32,4 +32,4 @@ Alternative implementations could pull that portion out into its own goroutine o
 
 Currently, the autoscaler is set up to log errors in ```autoscaler.log``` with a basic setup of the built-in log package. In addition to the unit tests in the repo, I also created a mock server with Postman to test against. Some of the things I would likely look at next for this would be end to end testing, improving logging with log levels, and implementing some timeouts on api calls and logging for that.
 
-In all, I spent somewhere around 4.5 hours in total on this project. Around 1.5-2 hours was spent on the goroutines, timing, etc in ```autoscaler.go```. Around 1.5 hours spent on writing tests, designing, implementing, and debugging the delta calculation. The remainder of the time spent on the project was split on the various parts, refactoring, adding doc comments, etc.
+I spent around 1.5-2 hours on the goroutines, timing, etc. Around 1.5 hours was spent on writing tests, designing, implementing, and debugging the delta calculation. Another 1-2 hours was spent on the various other portions of code, refactoring, adding doc comments, reading Go docs, etc.
