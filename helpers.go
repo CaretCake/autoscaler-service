@@ -1,3 +1,4 @@
+// Helpers contains helpful wrapper functions to contain repetitive error handling and other consistent, repetitive code.
 package main
 
 import (
@@ -6,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 )
 
 // TryUnmarshalJSON attempts to call json.Unmarshal on data and handles errors.
@@ -29,10 +31,14 @@ func TryGet(url string) ([]byte, error) {
 		return nil, fmt.Errorf("could not read response body: %s", err)
 	}
 
+	if res.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("GET request to %v failed with status code: %v msg: %v", url, res.StatusCode, strings.TrimSpace(string(body)))
+	}
+
 	return body, nil
 }
 
-// TryGet attempts to make a POST request to the specified URL and either returns the body or handles error creation.
+// TryPost attempts to make a POST request to the specified URL and either returns the body or handles error creation.
 func TryPostJSON(url string, payload interface{}) ([]byte, error) {
 	jsonPayload, err := json.Marshal(payload)
 	if err != nil {
@@ -48,6 +54,10 @@ func TryPostJSON(url string, payload interface{}) ([]byte, error) {
 	body, err := io.ReadAll(res.Body)
 	if err != nil {
 		return nil, fmt.Errorf("could not read response body: %s", err)
+	}
+
+	if res.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("POST request to %v failed with status code: %v msg: %v", url, res.StatusCode, strings.TrimSpace(string(body)))
 	}
 
 	return body, nil

@@ -1,3 +1,5 @@
+// DeploymentService acts as a layer to contain the business logic of the autoscaler, including the delta scaling
+// calculation, and handling communication with the api layer.
 package main
 
 import (
@@ -9,7 +11,7 @@ import (
 // A DeploymentConfig contains the data for a deployment's configuration.
 type DeploymentConfig struct {
 	ServersPerHost int     `json:"servers_per_host"`
-	TargetFreePct  float32 `json:"target_free_pct"`
+	TargetFreePct  float64 `json:"target_free_pct"`
 	Id             string  `json:"id"`
 }
 
@@ -38,8 +40,7 @@ func CheckStatusAndScale(config DeploymentConfig) {
 		return
 	}
 
-	delta := 0
-	delta = calculateDelta(config, status)
+	delta := calculateDelta(config, status)
 
 	if delta != 0 {
 		err = ScaleDeployment(config.Id, delta)
@@ -53,21 +54,30 @@ func CheckStatusAndScale(config DeploymentConfig) {
 // the target percentage of free servers. Note that the returned int value may be positive or negative.
 func calculateDelta(config DeploymentConfig, status Status) int {
 	delta := 0
+
+	if config.ServersPerHost < 1 || config.TargetFreePct < 0 || status.FreeServers < 0 || status.TotalServers < 0 {
+		log.Printf("calculateDelta: cannot calculate delta for invalid deployment, skipping: config: { %v }, status: { %v }", config, status)
+		return delta
+	}
+
 	targetFreePct := float64(config.TargetFreePct) / 100.0
 	targetFreePct = math.Round(targetFreePct*100) / 100
-	freePercent := float64(status.FreeServers) / float64(status.TotalServers)
+	freePct := float64(status.FreeServers) / float64(status.TotalServers)
 
-	if freePercent != targetFreePct {
+	if freePct != targetFreePct {
 		targetBusyPct := 1.0 - targetFreePct
 		targetBusyPct = math.Round(targetBusyPct*100) / 100
 		busyServerCount := status.TotalServers - status.FreeServers
 
-		// The following uses the inferred target busy percentage and current number of busy servers
-		// to calculate the new targetServerCount. i.e. busyServerCount is targetBusyPct of the targetServerCount
+		// The following uses the inferred target busy percentage and current count of busy servers
+		// to calculate the new targetServerCount. i.e. busyServerCount is targetBusyPct of the targetServerCount.
+		// We need the target server count in order to calculate the target number of free servers.
 		targetServerCount := int(float64(busyServerCount) / targetBusyPct)
 		targetFreeServerCount := int(math.Ceil(float64(targetServerCount) * targetFreePct))
 		diff := targetFreeServerCount - status.FreeServers
 
+		// Because we're scaling the deployment by hosts, which each contain the configured number of servers, we need to
+		// account for that in setting the delta
 		delta = int(math.Ceil(float64(diff) / float64(config.ServersPerHost)))
 	}
 

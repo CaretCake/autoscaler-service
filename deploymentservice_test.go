@@ -89,6 +89,19 @@ func TestCalculateDelta(t *testing.T) {
 			},
 			expect: 0,
 		},
+		{
+			c: DeploymentConfig{
+				ServersPerHost: 1,
+				TargetFreePct:  90,
+				Id:             "",
+			},
+			s: Status{
+				CurrentHosts: 600,
+				TotalServers: 600,
+				FreeServers:  540,
+			},
+			expect: 0,
+		},
 	}
 
 	for _, tt := range tests {
@@ -101,3 +114,6 @@ func TestCalculateDelta(t *testing.T) {
 		})
 	}
 }
+
+// Test all 0 values, alternating 0 values
+// Test empty ids

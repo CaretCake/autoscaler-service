@@ -1,10 +1,12 @@
+// Api contains all of the calls out to the deployments api and handles reading, deserialization / serialization,
+// as well as errors from the api.
 package main
 
 import (
 	"fmt"
 )
 
-const apiURL = "127.0.0.1:8000"
+const apiURL = "http://127.0.0.1:5000"
 
 // GetDeployments makes a GET request to return a list of DeploymentConfigs representing all active deployments.
 func GetDeployments() ([]DeploymentConfig, error) {
