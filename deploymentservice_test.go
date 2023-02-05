@@ -102,6 +102,19 @@ func TestCalculateDelta(t *testing.T) {
 			},
 			expect: 0,
 		},
+		{
+			c: DeploymentConfig{
+				ServersPerHost: 13,
+				TargetFreePct:  17,
+				Id:             "",
+			},
+			s: Status{
+				CurrentHosts: 372,
+				TotalServers: 4836,
+				FreeServers:  942,
+			},
+			expect: -11,
+		},
 	}
 
 	for _, tt := range tests {
@@ -115,5 +128,60 @@ func TestCalculateDelta(t *testing.T) {
 	}
 }
 
-// Test all 0 values, alternating 0 values
-// Test empty ids
+func TestCalculateDeltaWithInvalidDeployments(t *testing.T) {
+	var tests = []struct {
+		c      DeploymentConfig
+		s      Status
+		expect int
+	}{
+		{
+			c: DeploymentConfig{
+				ServersPerHost: 0,
+				TargetFreePct:  15,
+				Id:             "",
+			},
+			s: Status{
+				CurrentHosts: 10,
+				TotalServers: 100,
+				FreeServers:  0,
+			},
+			expect: 0,
+		},
+		{
+			c: DeploymentConfig{
+				ServersPerHost: 10,
+				TargetFreePct:  -5,
+				Id:             "",
+			},
+			s: Status{
+				CurrentHosts: 100,
+				TotalServers: 1000,
+				FreeServers:  100,
+			},
+			expect: 0,
+		},
+		{
+			c: DeploymentConfig{
+				ServersPerHost: 0,
+				TargetFreePct:  0,
+				Id:             "",
+			},
+			s: Status{
+				CurrentHosts: 0,
+				TotalServers: 0,
+				FreeServers:  0,
+			},
+			expect: 0,
+		},
+	}
+
+	for _, tt := range tests {
+		testname := fmt.Sprintf("%v,%v", tt.c, tt.s)
+		t.Run(testname, func(t *testing.T) {
+			got := calculateDelta(tt.c, tt.s)
+			if got != tt.expect {
+				t.Errorf("got: %d, expected: %d", got, tt.expect)
+			}
+		})
+	}
+}
