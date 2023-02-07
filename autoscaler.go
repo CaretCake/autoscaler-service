@@ -64,7 +64,7 @@ func autoscale(shutdownChannel chan bool, waitGroup *sync.WaitGroup) {
 			default:
 			}
 
-			discoveredDeployments, err := Discover()
+			discoveredDeployments, err := GetDeployments()
 			if err != nil {
 				log.Printf("Autoscale: error getting deployments, skipping interval: %v", err)
 				continue

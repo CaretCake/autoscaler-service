@@ -3,7 +3,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"math"
 )
@@ -20,16 +19,6 @@ type Status struct {
 	CurrentHosts int `json:"current_hosts"`
 	TotalServers int `json:"total_servers"`
 	FreeServers  int `json:"free_servers"`
-}
-
-// Discover returns a list of DeploymentConfigs for all active deployments.
-func Discover() ([]DeploymentConfig, error) {
-	discoveredDeploys, err := GetDeployments()
-	if err != nil {
-		return nil, fmt.Errorf("Discover: %v", err)
-	}
-
-	return discoveredDeploys, nil
 }
 
 // CheckStatusAndScale checks the status of the given deployment and scales it, if necessary.
