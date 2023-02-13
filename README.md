@@ -8,7 +8,7 @@ go test .
 go test . -v
 ```
 
-#### To run quickly for dev purposeswith the following command:
+#### To run quickly for dev purposes use the following command:
 ```
 go run .
 ```
